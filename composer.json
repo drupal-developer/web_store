@@ -1,5 +1,5 @@
 {
-  "name": "drupal-developer/store",
+  "name": "drupal-developer/web_store",
   "description": "Funcionalidad principal para web tienda",
   "type": "drupal-module-core",
   "minimum-stability": "dev",
