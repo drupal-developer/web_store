@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_sendcloud_theme($existing, $type, $theme, $path) {
+  return [
+    'sendcloud_tracking' => [
+      'template' => 'sendcloud-tracking',
+      'variables' => ['url' => NULL],
+    ],
+    'sendcloud_devolution' => [
+      'template' => 'sendcloud-devolution',
+      'variables' => ['url' => NULL],
+    ]
+  ];
+}

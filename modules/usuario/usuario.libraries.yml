@@ -1,0 +1,4 @@
+panel:
+  version: VERSION
+  js:
+    js/panel.js: {}

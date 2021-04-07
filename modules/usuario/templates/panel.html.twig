@@ -1,0 +1,24 @@
+<div class="cabecera">
+  Mi panel
+</div>
+<div class="navigation">
+  <ul class="nav">
+    <li class="nav-item">
+      <a class="nav-link {% if page == 'cuenta' %} active {% endif %}" href="{{ path('usuario.panel', {'page': 'cuenta'}) }}">Mi cuenta</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if page == 'datos' %} active {% endif %}" href="{{ path('usuario.panel', {'page': 'datos'}) }}">Mis datos</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if page == 'pedidos' %} active {% endif %}" href="{{ path('usuario.panel', {'page': 'pedidos'}) }}">Mis Pedidos</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if page == 'tarjetas' %} active {% endif %}" href="{{ path('usuario.panel', {'page': 'tarjetas'}) }}">Mis tarjetas</a>
+    </li>
+  </ul>
+</div>
+<div class="content">
+  {{ content }}
+</div>
+
+

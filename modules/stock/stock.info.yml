@@ -1,0 +1,7 @@
+type: module
+name: 'Stock'
+description: 'Funcionalidad para el control de stock'
+package: 'Tienda'
+core_version_requirement: ^9
+dependencies:
+  - commerce_simple_stock:commerce_simple_stock

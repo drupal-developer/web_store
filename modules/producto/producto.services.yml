@@ -1,0 +1,10 @@
+services:
+  producto.ccommerce_product_attribute_edit_form:
+    class: Drupal\producto\Form\ProductAttributeFormAlter
+    arguments:
+      - 'commerce_product_attribute_edit_form'
+    tags:
+      - name: form_alter
+        priority: 1
+
+

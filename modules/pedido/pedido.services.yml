@@ -1,0 +1,31 @@
+services:
+  logger.channel.pedido:
+    parent: logger.channel_base
+    arguments: [ 'pedido' ]
+  pedido.commerce_checkout_flow_multistep_default:
+    class: Drupal\pedido\Form\CheckoutFormAlter
+    arguments:
+      - 'commerce_checkout_flow_multistep_default'
+    tags:
+      - name: form_alter
+        priority: 1
+  commerce_order.order_receipt_subscriber:
+    class: Drupal\pedido\EventSubscriber\OrderCompletedEventSuscriber
+    arguments: [ '@language_manager', '@plugin.manager.mail','@logger.channel.pedido','@token', '@renderer', '@entity_type.manager', '@module_handler']
+    tags:
+      - { name: event_subscriber }
+  commerce_order.order_receipt_mail:
+    class: Drupal\pedido\Mail\OrderReceiptMail
+    arguments: [ '@entity_type.manager', '@commerce.mail_handler', '@commerce_order.order_total_summary' ]
+  pedido.commerce_order_item_add_to_cart_form:
+    class: Drupal\pedido\Form\CommerceProductAddCartFormAlter
+    arguments:
+      - 'commerce_order_item_add_to_cart_form'
+    tags:
+      - name: form_alter
+        priority: 5
+  pedido.product_preprocess:
+    class: Drupal\pedido\Preprocess\ProductPreprocess
+    arguments: [ '@request_stack', '@current_route_match' ]
+    tags:
+      - { name: product_preprocess }

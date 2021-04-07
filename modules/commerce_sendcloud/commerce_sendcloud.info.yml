@@ -1,0 +1,7 @@
+type: module
+name: 'Commerce SendCloud'
+description: 'Integrar envío a través de la plataforma SendCloud'
+package: 'Tienda'
+core_version_requirement: ^9
+dependencies:
+  - commerce_shipping:commerce_shipping

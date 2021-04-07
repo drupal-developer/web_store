@@ -1,0 +1,5 @@
+type: module
+name: 'Usuario'
+description: 'Funcionalidad general de los usuarios'
+package: 'Tienda'
+core_version_requirement: ^9

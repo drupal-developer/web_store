@@ -1,0 +1,82 @@
+<?php
+
+use JetBrains\PhpStorm\ArrayShape;
+
+
+/**
+ * Implements hook_theme().
+ */
+#[ArrayShape([
+  'panel' => "array",
+  'usuario_datos_form' => "string[]",
+  'tarjetas' => "array",
+  'modal_tarjetas' => "array",
+  'panel_pedido' => "array"
+])]
+function usuario_theme($existing, $type, $theme, $path): array {
+  return [
+    'panel' => [
+      'template' => 'panel',
+      'path' => $path . '/templates',
+      'variables' => ['page' => NULL, 'content' => NULL],
+    ],
+    'usuario_datos_form' => [
+      'template' => 'usuario-datos-form',
+      'render element' => 'form',
+    ],
+    'tarjetas' => [
+      'template' => 'tarjetas',
+      'path' => $path . '/templates',
+      'variables' => [
+        'uid' => NULL,
+        'tarjetas' => NULL,
+      ],
+    ],
+    'panel_pedido' => [
+      'template' => 'panel-pedido',
+      'path' => $path . '/templates',
+      'variables' => ['order' => NULL],
+    ],
+  ];
+}
+
+/**
+ * Preprocess function for tarjetas template.
+ *
+ * @param $variables
+ */
+function template_preprocess_tarjetas(&$variables) {
+
+  $tarjetas = [];
+
+  if ($variables['uid']) {
+    $query = Drupal::entityQuery('commerce_payment_method');
+    $query->condition('uid', $variables['uid']);
+    $result = $query->execute();
+    foreach ($result as $id) {
+      $entity = Drupal\commerce_payment\Entity\PaymentMethod::load($id);
+      if ($entity instanceof Drupal\commerce_payment\Entity\PaymentMethod) {
+        $tarjetas[] = $entity;
+      }
+    }
+  }
+
+  $variables['tarjetas'] = $tarjetas;
+}
+
+/**
+ * Implements hook_entity_form_display_alter().
+ *
+ * @param \Drupal\Core\Entity\Display\EntityFormDisplayInterface $form_display
+ * @param array $context
+ */
+function usuario_entity_form_display_alter(Drupal\Core\Entity\Display\EntityFormDisplayInterface &$form_display, array $context) {
+  $route = Drupal::routeMatch();
+  if($context['entity_type'] == 'user' && $context['bundle'] == 'user'){
+    if ($route->getRouteName() == 'usuario.panel') {
+      $storage = \Drupal::service('entity_type.manager')->getStorage('entity_form_display');
+      $form_display = $storage->load('user.user.panel');
+    }
+  }
+}
+

@@ -1,0 +1,19 @@
+services:
+  logger.channel.stock:
+    parent: logger.channel_base
+    arguments: [ 'stock' ]
+  stock.alerta:
+    class: Drupal\stock\AlertaManager
+    arguments: [ '@current_user', '@logger.channel.stock', '@entity_type.manager','@plugin.manager.mail','@token','@language_manager']
+  stock.commerce_order_item_add_to_cart_form:
+    class: Drupal\stock\Form\CommerceProductAddCartFormAlter
+    arguments:
+      - 'commerce_order_item_add_to_cart_form'
+    tags:
+      - name: form_alter
+        priority: 4
+  stock.commands:
+    class: Drupal\stock\Commands\AlertCommand
+    arguments: ['@logger.channel.stock', '@entity_type.manager', '@stock.alerta' ]
+    tags:
+      - { name: drush.command }

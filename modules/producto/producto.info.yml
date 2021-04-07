@@ -1,0 +1,5 @@
+type: module
+name: 'Producto'
+description: 'Funcionalidad para productos'
+package: 'Tienda'
+core_version_requirement: ^9

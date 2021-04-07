@@ -1,0 +1,29 @@
+usuario.panel:
+  path: '/panel/{page}'
+  defaults:
+    _controller: '\Drupal\usuario\Controller\PanelController::panel'
+    _title: 'Mi panel'
+    page: 'cuenta'
+  requirements:
+    _role: 'authenticated'
+usuario.eliminar_tarjeta:
+  path: /tarjeta/{commerce_payment_method}/delete
+  defaults:
+    _controller: '\Drupal\usuario\Controller\PanelController::eliminarTarjeta'
+    _title: 'Eliminar tarjeta'
+  requirements:
+    _role: 'authenticated'
+usuario.panel.pedido:
+  path: '/panel/pedido/{commerce_order}'
+  defaults:
+    _controller: '\Drupal\usuario\Controller\PanelController::pedido'
+    _title_callback: '\Drupal\usuario\Controller\PanelController::pedidoTitle'
+  requirements:
+    _entity_access: commerce_order.view
+usuario.panel.pedido_tracking:
+  path: '/panel/pedido/{commerce_order}/tracking'
+  defaults:
+    _controller: '\Drupal\usuario\Controller\PanelController::tracking'
+    _title: 'Pedido'
+  requirements:
+    _entity_access: commerce_order.view

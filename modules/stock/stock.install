@@ -1,0 +1,16 @@
+<?php
+
+
+/**
+ *  Alerta: Añadir campo fecha de actualización.
+ */
+function stock_update_9001(&$sandbox) {
+  $database = new \Drupal\Core\Database\Driver\mysql\Schema(\Drupal\Core\Database\Database::getConnection());
+  if (!$database->fieldExists('alerta', 'changed')) {
+    $definition = \Drupal\Core\Field\BaseFieldDefinition::create('changed')
+      ->setLabel(t('Changed'))
+      ->setDescription(t('The time that the entity was last edited.'));
+    $update_manager = \Drupal::entityDefinitionUpdateManager();
+    $update_manager->installFieldStorageDefinition('changed', 'alerta', 'stock', $definition);
+  }
+}

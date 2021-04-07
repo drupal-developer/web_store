@@ -1,0 +1,15 @@
+services:
+  logger.channel.commerce_sendcloud:
+    parent: logger.channel_base
+    arguments: [ 'commerce_sendcloud']
+  commerce_sendcloud.shipment:
+    class: Drupal\commerce_sendcloud\CommerceSenCloud
+    arguments: [ '@entity_type.manager','@logger.channel.commerce_sendcloud' ]
+    tags:
+      - { name: commerce_sendcloud }
+  commerce_sendcloud.order_receipt_subscriber:
+    class: Drupal\commerce_sendcloud\EventSubscriber\OrderCompletedEventSuscriber
+    arguments: ['@commerce_sendcloud.shipment','@logger.channel.commerce_sendcloud']
+    tags:
+      - { name: event_subscriber }
+

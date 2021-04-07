@@ -1,0 +1,160 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ *
+ * @param $existing
+ * @param $type
+ * @param $theme
+ * @param $path
+ *
+ * @return array[]
+ */
+function pedido_theme($existing, $type, $theme, $path) {
+  return [
+    'correo_resumen_pedido' => [
+      'template' => 'correo-resumen-pedido',
+      'path' => $path . '/templates',
+      'variables' => [
+        'order_entity' => NULL,
+      ],
+    ],
+    'correo_informacion_envio' => [
+      'template' => 'correo_informacion_envio',
+      'path' => $path . '/templates',
+      'variables' => [
+        'profile' => NULL,
+      ],
+    ],
+    'order_user_actions' => [
+      'template' => 'order-user-actions',
+      'path' => $path . '/templates',
+      'variables' => [
+        'order_id' => NULL,
+        'tracking' => NULL,
+      ],
+    ]
+  ];
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter().
+ */
+function pedido_theme_suggestions_commerce_checkout_form_alter(array &$suggestions, array $variables) {
+  $suggestions[] = 'commerce_checkout_form__' . $variables['form']['#step_id'];
+}
+
+function template_preprocess_commerce_shipment_confirmation(array &$variables) {
+  $correo = Drupal::service('commerce_order.order_receipt_subscriber')->mailOrderSend($variables['order_entity']);
+  $variables['body'] = $correo['body'];
+}
+
+/**
+ * Implements hook_mail_alter().
+ */
+function pedido_mail_alter(&$message) {
+  if ($message['id'] == 'commerce_shipment_confirmation') {
+    $shipment = $message['params']['shipment'];
+    if ($shipment instanceof \Drupal\commerce_shipping\Entity\Shipment) {
+      $order = \Drupal\commerce_order\Entity\Order::load($shipment->getOrderId());
+      if ($order instanceof \Drupal\commerce_order\Entity\Order) {
+        $correo = Drupal::service('commerce_order.order_receipt_subscriber')->mailOrderSend($order);
+        $message['params']['subject'] = $correo['asunto'];
+        $message['subject'] = $correo['asunto'];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_payment_method_update().
+ */
+function pedido_commerce_payment_method_update(\Drupal\commerce_payment\Entity\PaymentMethodInterface $paymentMethod) {
+  // Añadir id cliente stripe para usuario de compra anónima.
+  $moduleHandler = \Drupal::service('module_handler');
+  if ($moduleHandler->moduleExists('commerce_stripe')) {
+    if ($paymentMethod->getOwnerId()) {
+      $user = \Drupal\user\Entity\User::load($paymentMethod->getOwnerId());
+      if ($user instanceof \Drupal\user\Entity\User) {
+        if (!$user->get('commerce_remote_id')->remote_id) {
+          $orders = \Drupal::entityTypeManager()
+            ->getStorage('commerce_order')
+            ->loadByProperties(['mail' => $user->getEmail()]);
+          if ($orders) {
+            foreach ($orders as $order) {
+              if ($order instanceof \Drupal\commerce_order\Entity\Order) {
+                if ($order->get('field_customer_id')->value) {
+                  \Drupal::service('commerce_order.order_receipt_subscriber')->addCustomerStripe($order, $user);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+function template_preprocess_commerce_checkout_progress(&$variables) {
+  $step = Drupal::routeMatch()->getParameter('step');
+  if ($step == 'review' || $step == 'complete') {
+    foreach ($variables['steps'] as &$st) {
+      if ($st['id'] == 'review') {
+        $st['label'] = 'Pago';
+      }
+    }
+  }
+  else {
+    $steps = [];
+    foreach ($variables['steps'] as $st) {
+      $steps[] = $st;
+      if ($st['id'] == 'order_information') {
+        $steps[] = ['id' => 'review', 'label' => 'Pago', 'position' => 'next'];
+      }
+    }
+    $variables['steps'] = $steps;
+  }
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function pedido_views_data_alter(array &$data) {
+  $data['commerce_order']['user_actions'] = [
+    'title' => 'Acciones usuario',
+    'help' => 'Botones de acciones para los usuarios en el panel',
+    'field' => [
+      'id' => 'commerce_order_user_actions_field',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_views_pre_view().
+ */
+function pedido_views_pre_view(\Drupal\views\ViewExecutable $view, $display_id, array &$args) {
+  $route = \Drupal::routeMatch();
+  if ($view->id() == 'commerce_order_item_table') {
+    if ($route) {
+      $order = $route->getParameter('commerce_order');
+      if ($order instanceof \Drupal\commerce_order\Entity\Order) {
+        $args[0] = $order->id();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * @param $variables
+ */
+function pedido_preprocess_commerce_product(&$variables) {
+  $item_id = \Drupal::request()->query->get('item_id');
+  if ($variables["elements"]["#view_mode"] == 'full' && $item_id) {
+    \Drupal::service('pedido.product_preprocess')->select($variables);
+  }
+}
+
+
+

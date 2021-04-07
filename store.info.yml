@@ -1,0 +1,8 @@
+type: module
+name: 'Tienda'
+description: 'Funcionalidad para web tienda'
+package: 'Tienda'
+core_version_requirement: ^9
+dependencies:
+  - commerce:commerce
+  - commerce_simple_stock:commerce_simple_stock

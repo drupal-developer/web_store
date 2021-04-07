@@ -1,0 +1,15 @@
+commerce_sendcloud.tracking:
+  path: '/tracking/{tracking_number}'
+  defaults:
+    _controller: '\Drupal\commerce_sendcloud\Controller\SendCloundController::tracking'
+    _title: 'Tracking'
+  requirements:
+    _access: 'TRUE'
+commerce_sendcloud.devolution:
+  path: '/devolucion'
+  defaults:
+    _controller: '\Drupal\commerce_sendcloud\Controller\SendCloundController::devolution'
+    _title: 'Devolución'
+  requirements:
+    _access: 'TRUE'
+

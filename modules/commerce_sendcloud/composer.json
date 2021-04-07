@@ -1,0 +1,11 @@
+{
+    "name": "drupal/commerce_sendcloud",
+    "type": "drupal-module",
+    "description": "Integrar envío a través de la plataforma SendCloud",
+    "homepage": "https://www.sendcloud.es/",
+    "require": {
+        "drupal/core": "^9",
+        "drupal/commerce": "^2.15",
+        "picqer/sendcloud-php-client": "*"
+    }
+}

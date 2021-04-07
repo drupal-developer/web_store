@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function producto_entity_type_alter(array &$entity_types) {
+  /** @var $entity_types \Drupal\Core\Entity\EntityTypeInterface[] */
+  $entity_types['commerce_product_variation']->setListBuilderClass('Drupal\producto\Builder\ProductVariationListBuilder');
+  $entity_types['commerce_product_attribute']->setListBuilderClass('Drupal\producto\Builder\ProductAttributeListBuilder');
+}
+
+
+/**
+ * Implements hook_inline_entity_form_table_fields_alter().
+ */
+function producto_inline_entity_form_table_fields_alter(&$fields, $context) {
+  if ($context['entity_type'] == 'commerce_product_variation') {
+    $fields['label']['label'] = 'Talla/Sexo/Color';
+    $fields['field_stock'] = [
+      'type' => 'field',
+      'label' => t('Stock'),
+      'weight' => 100,
+    ];
+  }
+}

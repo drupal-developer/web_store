@@ -1,0 +1,29 @@
+<form{{ attributes }}>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm">
+        <p>Datos personales</p>
+        {{ form.field_nombre }}
+        {{ form.field_apellidos }}
+        {{ form.field_telefono }}
+      </div>
+      <div class="col-sm">
+        <p>Datos fiscales</p>
+        {{ form.field_dni_cif }}
+        {{ form.datos_de_facturacion }}
+      </div>
+      <div class="col-sm">
+        <p>Datos de envio</p>
+        {{ form.customer }}
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    {{ form.actions.submit }}
+  </div>
+
+  {{ form.form_build_id }}
+  {{ form.form_token }}
+  {{ form.form_id }}
+</form>
+

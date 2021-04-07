@@ -1,0 +1,8 @@
+services:
+  panel.event_subscriber:
+    class: Drupal\usuario\EventSubscriber\PanelSubscriber
+    arguments: [ '@current_user',  '@request_stack' ]
+    tags:
+      - { name: event_subscriber, priority: 1 }
+
+

@@ -1,0 +1,11 @@
+{{ attach_library('commerce_payment/payment_method_icons') }}
+<ul class="card-list">
+  {% for tarjeta in tarjetas %}
+    <li>
+      <span class="card-number"><span class="payment-method-icon payment-method-icon--{{ tarjeta.card_type.value }}"></span> terminada en {{ tarjeta.card_number.value }}</span>
+      <span> - </span>
+      <span class="card-expired">{{ tarjeta.card_exp_month.value }}/{{ tarjeta.card_exp_year.value }}</span>
+      <span class="card-delete"><a href="{{ url('entity.commerce_payment_method.delete_form', {"user": user.id(), 'commerce_payment_method': tarjeta.id()}, {'query': {'destination': path('usuario.panel', {'page': 'tarjetas'})}}) }}">Eliminar</a></span>
+    </li>
+  {% endfor %}
+</ul>

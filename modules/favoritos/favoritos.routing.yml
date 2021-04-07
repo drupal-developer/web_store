@@ -1,0 +1,14 @@
+favorito.action:
+  path: '/ajax/favorito/{commerce_product}/{action}'
+  defaults:
+    _controller: '\Drupal\favoritos\Controller\FavoritoController::action'
+    _title: 'Añadir favorito'
+  requirements:
+    _permission: 'access content'
+favorito.action.cart:
+  path: '/favorito/cart/{commerce_order_item}'
+  defaults:
+    _controller: '\Drupal\favoritos\Controller\FavoritoController::cart'
+    _title: 'Mover a favorito'
+  requirements:
+    _permission: 'access content'

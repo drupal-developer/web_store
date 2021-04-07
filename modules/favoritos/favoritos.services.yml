@@ -1,0 +1,18 @@
+services:
+  logger.channel.favoritos:
+    parent: logger.channel_base
+    arguments: [ 'favoritos' ]
+  favoritos:
+    class: Drupal\favoritos\Favoritos
+    arguments: [ '@current_user',  '@request_stack', '@logger.channel.favoritos', '@entity_type.manager', '@csrf_token' ]
+    tags:
+      - { name: favoritos }
+  favoritos.commerce_order_item_add_to_cart_form:
+    class: Drupal\favoritos\Form\CommerceProductAddCartFormAlter
+    arguments:
+      - 'commerce_order_item_add_to_cart_form'
+    tags:
+      - name: form_alter
+        priority: 3
+
+

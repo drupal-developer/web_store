@@ -1,0 +1,7 @@
+type: module
+name: 'Favoritos'
+description: 'Permite guardar productos en lista de favoritos'
+package: 'Tienda'
+core_version_requirement: ^9
+dependencies:
+  - commerce:commerce_product
