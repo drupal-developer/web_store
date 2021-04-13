@@ -1,0 +1,5 @@
+type: module
+name: 'Precio'
+description: 'Funcionalidad para los precios de los productos'
+package: 'Tienda'
+core_version_requirement: ^9

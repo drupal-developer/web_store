@@ -1,0 +1,7 @@
+precio.config:
+  path: '/admin/commerce/config/store/precio'
+  defaults:
+    _form: '\Drupal\precio\Form\PrecioConfigForm'
+    _title: 'Configuración de los precios'
+  requirements:
+    _permission: 'access commerce administration pages'

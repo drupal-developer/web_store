@@ -1,115 +1,240 @@
 <?php
 
-namespace  Drupal\commerce_sendcloud;
+
+namespace Drupal\commerce_sendcloud\Plugin\Commerce\ShippingMethod;
+
 
 use Drupal\commerce_order\Entity\Order;
-use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
-use Drupal\Component\Plugin\Exception\PluginNotFoundException;
-use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\commerce_price\Price;
+use Drupal\commerce_product\Entity\ProductVariation;
+use Drupal\commerce_shipping\Entity\ShipmentInterface;
+use Drupal\commerce_shipping\PackageTypeManagerInterface;
+use Drupal\commerce_shipping\Plugin\Commerce\ShippingMethod\ShippingMethodBase;
+use Drupal\commerce_shipping\ShippingRate;
+use Drupal\commerce_shipping\ShippingService;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Logger\LoggerChannel;
+use Drupal\profile\Entity\Profile;
+use Drupal\state_machine\WorkflowManagerInterface;
 use Picqer\Carriers\SendCloud\Connection;
-use Picqer\Carriers\SendCloud\Parcel;
-use Picqer\Carriers\SendCloud\SendCloud;
-use Picqer\Carriers\SendCloud\SendCloudApiException;
 
-class CommerceSenCloud {
+/**
+ * Método de envío a través SendCloud.
+ *
+ * @CommerceShippingMethod(
+ *   id = "commerce_sendcloud",
+ *   label = @Translation("SendCloud"),
+ * )
+ */
+class SendCloud extends ShippingMethodBase {
+
+  const TEST_SHIPPING_METHOD = 8;
 
   /**
    * @var \Drupal\Core\Logger\LoggerChannel
    */
-  protected LoggerChannel $logger;
+  private LoggerChannel $logger;
 
   /**
-   * @var \Drupal\Core\Entity\EntityTypeManager
+   * @var int|mixed
    */
-  protected EntityTypeManager $entityTypeManager;
-
-  public function __construct(EntityTypeManager $entityTypeManager, LoggerChannel $loggerChannel) {
-    $this->entityTypeManager = $entityTypeManager;
-    $this->logger = $loggerChannel;
-  }
-
-  public function getLogger(): LoggerChannel {
-    return $this->logger;
-  }
+  private mixed $conversion;
 
   /**
-   * Obtener configuración.
-   *
-   * @return array|null
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @var mixed|string
    */
-  public function getConfig(): ?array {
-    $config = NULL;
-    $shipping_method_storage = $this->entityTypeManager->getStorage('commerce_shipping_method');
-    /** @var \Drupal\commerce_shipping\Entity\ShippingMethodInterface[] $shipping_methods */
-    $shipping_methods = $shipping_method_storage->loadMultiple();
-    foreach ($shipping_methods as $method) {
-      $plugin = $method->getPlugin();
-      if ($plugin->getPluginId() == 'commerce_sendcloud') {
-        $config = $plugin->getConfiguration();
-      }
-    }
-    return $config;
-  }
+  private mixed $currency;
 
   /**
-   * Obtener parcela del pedido.
+   * Constructs a new SendCloud object.
    *
-   * @param \Drupal\commerce_order\Entity\Order $order
-   *
-   * @return \Picqer\Carriers\SendCloud\Parcel|null
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\commerce_shipping\PackageTypeManagerInterface $package_type_manager
+   *   The package type manager.
+   * @param \Drupal\state_machine\WorkflowManagerInterface $workflow_manager
+   *   The workflow manager.
    */
-  public function getParcelOrder(Order $order): ?Parcel {
-    $sendcloudClient = NULL;
-    try {
-      if ($config = $this->getConfig()) {
-        $connection = new Connection($config['public_key'], $config['secret_key']);
-        $sendcloudClient = new SendCloud($connection);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, PackageTypeManagerInterface $package_type_manager, WorkflowManagerInterface $workflow_manager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $package_type_manager, $workflow_manager);
+    $this->logger = new LoggerChannel('send_cloud_api');
+    $currency = 'EUR';
+    $conversion = 1;
+    $moduleHandler = \Drupal::service('module_handler');
+    if ($moduleHandler->moduleExists('precio')) {
+      if ($rate = \Drupal::service('precio.price_resolver')->getRate()) {
+        $currency = $rate['currency'];
+        $conversion = $rate['rate'];
       }
     }
-    catch (InvalidPluginDefinitionException | PluginNotFoundException | SendCloudApiException $e) {
-      $this->logger->error($e->getMessage());
-    }
-    $parcel = NULL;
-    if ($sendcloudClient) {
-      $parcels = $sendcloudClient->parcels();
-      $parcels = $parcels->all(['order_number' => $order->getOrderNumber()]);
-      if (!empty($parcels)) {
-        /** @var \Picqer\Carriers\SendCloud\Parcel $parcel */
-        $parcel = current($parcels);
-      }
-    }
-    return $parcel;
+
+    $this->currency = $currency;
+    $this->conversion = $conversion;
   }
 
   /**
-   * Obtener tracking url.
-   *
-   * @param \Drupal\commerce_order\Entity\Order $order
-   *
-   * @return string|null
+   * {@inheritdoc}
    */
-  public function getTrackingUrl(Order $order): ?string {
-    $tracking_url = NULL;
-    $parcel = $this->getParcelOrder($order);
-    $config = NULL;
-    try {
-      $config = $this->getConfig();
+  public function defaultConfiguration(): array {
+    return [
+        'public_key' => '',
+        'secret_key' => '',
+        'tracking_url' => '',
+        'devolution_url' => '',
+        'mode' => '',
+      ] + parent::defaultConfiguration();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state): array {
+    $form = parent::buildConfigurationForm($form, $form_state);
+
+    $form['public_key'] = [
+      '#type' => 'textfield',
+      '#title' => t('Public Key'),
+      '#default_value' => $this->configuration['public_key'],
+      '#required' => TRUE,
+    ];
+    $form['secret_key'] = [
+      '#type' => 'textfield',
+      '#title' => t('Secret Key'),
+      '#required' => TRUE,
+      '#default_value' => $this->configuration['secret_key'],
+    ];
+
+    $form['tracking_url'] = [
+      '#type' => 'textfield',
+      '#title' => t('Tracking Url'),
+      '#default_value' => $this->configuration['tracking_url'],
+    ];
+
+    $form['devolution_url'] = [
+      '#type' => 'textfield',
+      '#title' => t('Devolution Url'),
+      '#default_value' => $this->configuration['devolution_url'],
+    ];
+
+    $form['mode'] = [
+      '#type' => 'radios',
+      '#title' => t('Mode'),
+      '#options' => ['live' => t('Live'), 'test' => t('Test')],
+      '#default_value' => $this->configuration['mode'],
+    ];
+
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
+    parent::submitConfigurationForm($form, $form_state);
+
+    if (!$form_state->getErrors()) {
+      $values = $form_state->getValue($form['#parents']);
+      $this->configuration['public_key'] = $values['public_key'];
+      $this->configuration['secret_key'] = $values['secret_key'];
+      $this->configuration['tracking_url'] = $values['tracking_url'];
+      $this->configuration['devolution_url'] = $values['devolution_url'];
+      $this->configuration['mode'] = $values['mode'];
     }
-    catch (InvalidPluginDefinitionException | PluginNotFoundException $e) {
-      $this->logger->error($e->getMessage());
-    }
-    if ($parcel instanceof Parcel) {
-      if (isset($config['tracking_url']) && $config['tracking_url'] != '') {
-        $tracking_url = $config['tracking_url'] . '?country=' . strtolower($parcel->country['iso_2']) . '&tracking_number=' . $parcel->tracking_number . '&postal_code=' . $parcel->postal_code;
-      }
-      else {
-        $tracking_url = $parcel->getTrackingUrl();
+  }
+
+  private function getRates(Order $order, Profile $profile): array {
+    $config = $this->getConfiguration();
+    $rates = [];
+    $country = $profile->get('address')->country_code;
+    $connection = new Connection($config['public_key'], $config['secret_key']);
+    $sendcloudClient = new \Picqer\Carriers\SendCloud\SendCloud($connection);
+    $shipping_methods = $sendcloudClient->shippingMethods()->all();
+
+    // Calcular peso total pedido
+    $peso = 0;
+    foreach ($order->getItems() as $item) {
+      $producto = $item->getPurchasedEntity();
+      if ($producto instanceof ProductVariation) {
+        $peso += $producto->get('weight')->number * $item->getQuantity();
       }
     }
 
-    return $tracking_url;
+
+    // Obtener métodos de envio disponibles
+    foreach($shipping_methods as $item) {
+      $method = $item->attributes();
+
+      if ($method['id'] == self::TEST_SHIPPING_METHOD) continue;
+      if ($method['min_weight'] <= $peso && $method['max_weight'] >= $peso) {
+        foreach ($method['countries'] as $item) {
+          if ($item['iso_2'] == $country) {
+            $service_name = $method['carrier'];
+            $label = $method['name'];
+            $price = $item['price'] ? $item['price'] : $method['price'];
+            $amount = $price * $this->conversion;
+            $amount = round($amount, 2);
+            $price = ['number' => $amount, 'currency_code' => $this->currency];
+            $this->services[$service_name] = new ShippingService($method['id'], $label);
+            $rates[] = new ShippingRate([
+              'shipping_method_id' => $method['id'],
+              'service' => $this->services[$service_name],
+              'amount' => Price::fromArray($price),
+            ]);
+          }
+        }
+      }
+    }
+
+    return $rates;
   }
+
+  /**
+   * @inheritDoc
+   */
+  public function calculateRates(ShipmentInterface $shipment): array {
+
+    $order = NULL;
+    if ($shipment->getOrderId()) {
+      /** @var Order $order */
+      $order = Order::load($shipment->getOrderId());
+    }
+
+    $rates = [];
+
+    if ($shipment->getShippingProfile()->get('address')->isEmpty() || !$order) {
+      return $rates;
+    }
+
+    /** @var Profile $profile */
+    $profile = $shipment->getShippingProfile();
+
+    $config = $this->getConfiguration();
+
+
+
+
+    if ($config['mode'] == 'test') {
+      $amount = 5 * $this->conversion;
+      $amount = round($amount, 2);
+      $price = ['number' => $amount, 'currency_code' => $this->currency];
+      $this->services['sendcloud_test'] = new ShippingService(self::TEST_SHIPPING_METHOD, 'Servicio de prueba');
+      $rates[] = new ShippingRate([
+        'shipping_method_id' => $this->parentEntity->id(),
+        'service' => $this->services['sendcloud_test'],
+        'amount' => Price::fromArray($price),
+      ]);
+    }
+    else {
+      $rates = $this->getRates($order, $profile);
+    }
+
+    //$rates += $this->getRates($order, $profile);
+
+    return $rates;
+  }
+
 }

@@ -1,0 +1,4 @@
+precio.config:
+  title: 'Precios'
+  route_name: precio.config
+  parent: commerce.store_configuration

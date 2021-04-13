@@ -1,0 +1,9 @@
+services:
+  logger.channel.precio:
+    parent: logger.channel_base
+    arguments: ['precio']
+  precio.price_resolver:
+    class: Drupal\precio\Resolver\CommerceCurrencyResolver
+    arguments: ['@config.factory', '@logger.channel.precio', '@http_client', '@request_stack', '@serialization.phpserialize', '@serialization.json', '@entity_type.manager']
+    tags:
+      - { name: commerce_price.price_resolver, priority: 1000 }
