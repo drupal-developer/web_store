@@ -23,7 +23,7 @@
           Gastos de envío:
         </td>
         <td style="text-align: right">
-          {{ order_entity.shipments.entity.amount.number|number_format(2, ',', '.') }} €
+          {{ order_entity.shipments.entity.amount.number|number_format(2, ',', '.') }} {{ order_entity.shipments.entity.amount.currency_code }}
         </td>
       </tr>
     {% endif %}
@@ -32,7 +32,7 @@
         <b>Total:</b>
       </td>
       <td style="text-align: right">
-        {{ order_entity.total_price.number|number_format(2, ',', '.') }} €
+        {{ order_entity.total_price.number|number_format(2, ',', '.') }} {{ order_entity.total_price.currency_code }}
       </td>
     </tr>
     </tbody>

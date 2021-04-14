@@ -109,7 +109,7 @@ class OrderReceiptMail implements OrderReceiptMailInterface {
       ];
 
       \Drupal::logger('correo')->info('Pedido #' . $order->id() . ' completado enviado a ' . $to);
-      return $this->mailHandler->sendMail($to, $subject, $body, $params);
+      return $this->mailHandler->sendMail($to, $subject, ['#markup' => Markup::create($body)], $params);
     }
 
 
