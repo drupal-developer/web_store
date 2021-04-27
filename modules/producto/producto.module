@@ -15,7 +15,7 @@ function producto_entity_type_alter(array &$entity_types) {
  */
 function producto_inline_entity_form_table_fields_alter(&$fields, $context) {
   if ($context['entity_type'] == 'commerce_product_variation') {
-    $fields['label']['label'] = 'Talla/Sexo/Color';
+    //$fields['label']['label'] = 'Etiqueta';
     $fields['field_stock'] = [
       'type' => 'field',
       'label' => t('Stock'),
