@@ -157,7 +157,7 @@ class SendCloud extends ShippingMethodBase {
             $price = ['number' => $price, 'currency_code' => $currency];
             $this->services[$service_name] = new ShippingService($method['id'], $label);
             $rates[] = new ShippingRate([
-              'shipping_method_id' => $method['id'],
+              'shipping_method_id' => $this->parentEntity->id(),
               'service' => $this->services[$service_name],
               'amount' => Price::fromArray($price),
             ]);
