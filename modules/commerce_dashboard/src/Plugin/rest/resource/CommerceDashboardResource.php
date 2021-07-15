@@ -118,17 +118,17 @@ class CommerceDashboardResource extends ResourceBase {
 
     return [
       'today' => [
-        'amount' => $totals['today'],
+        'amount' => number_format($totals['today'], 2, ',', '.'),
         'changeIndicator' => ($totals['today'] > $totals['yesterday']) ? 'increased' : 'decreased',
         'changePercentage' => '7',
       ],
       'yesterday' => [
-        'amount' => $totals['yesterday'],
+        'amount' => number_format($totals['yesterday'], 2, ',', '.'),
         'changeIndicator' => ($totals['yesterday'] > $totals['prevYesterday']) ? 'increased' : 'decreased',
         'changePercentage' => '7',
       ],
       'week' => [
-        'amount' => $totals['week'],
+        'amount' => number_format($totals['week'], 2, ',', '.'),
         'changeIndicator' => ($totals['week'] > $totals['prevWeek']) ? 'increased' : 'decreased',
         'changePercentage' => '7',
       ],
@@ -152,7 +152,7 @@ class CommerceDashboardResource extends ResourceBase {
 
     $total = $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
     foreach ($total as &$val) {
-      $val['total'] = round($val['total'], 2);
+      $val['total'] = number_format($val['total'], 2, ',', '.');
       $val['purchases'] = round($val['purchases']);
     }
     return $total;
