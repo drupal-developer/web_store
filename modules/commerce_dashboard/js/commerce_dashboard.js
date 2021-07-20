@@ -5,7 +5,7 @@ var markup = `<div id="commerce-dashboard">
         <v-row>
 
           <v-col
-            cols="4"
+            cols="sm-4"
           >
             <v-card
               class="mx-auto"
@@ -30,7 +30,7 @@ var markup = `<div id="commerce-dashboard">
           </v-col>
 
           <v-col
-            cols="4"
+            cols="sm-4"
           >
             <v-card
               class="mx-auto"
@@ -54,7 +54,7 @@ var markup = `<div id="commerce-dashboard">
           </v-col>
 
           <v-col
-            cols="4"
+            cols="sm-4"
           >
             <v-card
               class="mx-auto"
@@ -82,7 +82,7 @@ var markup = `<div id="commerce-dashboard">
 
         <v-row>
           <v-col
-            cols="8"
+            cols="sm-8"
           >
             <v-card
               class="mx-auto"
@@ -128,7 +128,7 @@ var markup = `<div id="commerce-dashboard">
           </v-col>
 
           <v-col
-            cols="4"
+            cols="sm-4"
           >
             <v-card>
               <v-card-title>
