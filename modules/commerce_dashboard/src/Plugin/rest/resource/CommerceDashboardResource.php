@@ -2,6 +2,8 @@
 
 namespace Drupal\commerce_dashboard\Plugin\rest\resource;
 
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -69,7 +71,10 @@ class CommerceDashboardResource extends ResourceBase {
       'carts' => $carts,
       'currencyCode' => $currency_code,
     ];
-    return new ResourceResponse($response);
+    $response = new ResourceResponse($response);
+    $response->addCacheableDependency($sales);
+    $response->addCacheableDependency($top_products);
+    return $response;
   }
 
   /**
