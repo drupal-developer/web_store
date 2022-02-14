@@ -148,7 +148,7 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
   }
 
   /**
-   * Notificación pago.
+   * Process notification.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The request.
@@ -160,8 +160,6 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
    * @throws \Drupal\Core\Entity\EntityStorageException
    */
   public function processRequest(Request $request, OrderInterface $order = NULL): bool {
-
-
 
     $feedback = [
       'Order' => $request->get('Order'),
@@ -196,8 +194,6 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
         }
       }
     }
-
-    \Drupal::state()->set('payco2', $order);
 
     if (($order instanceof OrderInterface) && $this->lock->acquire($this->getLockName($order))) {
 

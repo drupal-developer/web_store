@@ -1,6 +1,6 @@
 type: module
 name: 'Commerce Paycomet'
-description: 'Integración pasarela de pago Paycomet'
+description: 'Paycomet payment gateway integration '
 package: 'Tienda'
 core_version_requirement: ^9
 version: 9.0.0
