@@ -5,9 +5,10 @@ namespace Drupal\commerce_paycomet\Plugin\Commerce\PaymentGateway;
 
 
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_payment\CreditCard;
+use Drupal\commerce_payment\Entity\PaymentMethod;
 use Drupal\commerce_payment\Exception\PaymentGatewayException;
 use Drupal\commerce_payment\PaymentMethodTypeManager;
-use Drupal\commerce_payment\PaymentStorageInterface;
 use Drupal\commerce_payment\PaymentTypeManager;
 use Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OffsitePaymentGatewayBase;
 use Drupal\commerce_price\MinorUnitsConverterInterface;
@@ -19,6 +20,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\commerce_paycomet\PaycometBankstore;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -29,6 +31,7 @@ use Symfony\Component\HttpFoundation\Request;
  *   id = "paycomet_redirect",
  *   label = @Translation("Paycoment Redirect"),
  *   display_label = @Translation("Credit Cart"),
+ *   payment_method_types = {"credit_card"},
  *   modes = {
  *     "n/a" = @Translation("N/A"),
  *   },
@@ -78,7 +81,7 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
         'client_code' => '',
         'terminal' => '',
         'key' => '',
-        'url_iframe' => '',
+        'jet_id' => '',
         'currency' => 'EUR'
       ] + parent::defaultConfiguration();
   }
@@ -107,10 +110,10 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
       '#required' => TRUE,
     ];
 
-    $form['url_iframe'] = [
+    $form['jet_id'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('URL IFRAME'),
-      '#default_value' => $this->configuration['url_iframe'],
+      '#title' => $this->t('JET ID'),
+      '#default_value' => $this->configuration['jet_id'],
       '#required' => TRUE,
     ];
 
@@ -125,13 +128,13 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
     return $form;
   }
 
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
     parent::submitConfigurationForm($form, $form_state);
     $values = $form_state->getValue($form['#parents']);
     $this->configuration['client_code'] = $values['client_code'];
     $this->configuration['terminal'] = $values['terminal'];
     $this->configuration['key'] = $values['key'];
-    $this->configuration['url_iframe'] = $values['url_iframe'];
+    $this->configuration['jet_id'] = $values['jet_id'];
     $this->configuration['currency'] = $values['currency'];
   }
 
@@ -235,6 +238,56 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
 
         }
       }
+
+      if ($feedback['Response'] === 'OK' && !empty($feedback['TokenUser']) && !empty($feedback['IdUser'])) {
+        $remote_id = $feedback['IdUser'] . '_' . $feedback['TokenUser'];
+        $payment_method_storage = NULL;
+        try {
+          $payment_method_storage = $this->entityTypeManager->getStorage('commerce_payment_method');
+        }
+        catch (InvalidPluginDefinitionException|PluginNotFoundException $e) {
+          $this->logger->error($e->getMessage());
+        }
+
+        if ($payment_method_storage) {
+          $payment_method = $payment_method_storage->getQuery()
+            ->condition('uid', $order->getCustomerId())
+            ->condition('remote_id', $remote_id)
+            ->execute();
+
+          if (empty($payment_method)) {
+            $config = $this->getConfiguration();
+            $paycomet = new PaycometBankstore($config['client_code'], $config['terminal'], $config['key'], $config['jet_id']);
+            $info_user = $paycomet->InfoUser($feedback['IdUser'], $feedback['TokenUser']);
+
+
+            if (isset($info_user->DS_MERCHANT_PAN)) {
+              $expire = $info_user->DS_EXPIRYDATE;
+              $expire = explode('/', $expire);
+              [$year, $month] = $expire;
+
+              $expires = CreditCard::calculateExpirationTimestamp($month, $year);
+              $payment_method = PaymentMethod::create([
+                'type' => 'credit_card',
+                'payment_gateway' => $this->parentEntity->id(),
+                'payment_gateway_mode' => $config['mode'],
+                'uid' => $order->getCustomerId(),
+                'remote_id' => $remote_id,
+                'expires' => $expires,
+              ]);
+
+              $payment_method->card_type = strtolower($info_user->DS_CARD_BRAND);
+              $payment_method->card_number = $info_user->DS_MERCHANT_PAN;
+              $payment_method->card_exp_month = $month;
+              $payment_method->card_exp_year = $year;
+
+              $payment_method->save();
+            }
+          }
+        }
+      }
+
+
       $this->lock->release($this->getLockName($order));
       return TRUE;
     }

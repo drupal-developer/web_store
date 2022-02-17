@@ -28,6 +28,7 @@ class PanelController extends ControllerBase {
     '#theme' => "string",
     '#page' => "",
     '#content' => "mixed",
+    '#cache' => "array",
     '#attached' => "array"
   ])]
   public function panel($page): array {
@@ -61,6 +62,7 @@ class PanelController extends ControllerBase {
       '#theme' => 'panel',
       '#page' => $page,
       '#content' => $content,
+      '#cache' => ['max-age' => 0],
       '#attached' => ['library' => ['usuario/panel']]
     ];
   }
