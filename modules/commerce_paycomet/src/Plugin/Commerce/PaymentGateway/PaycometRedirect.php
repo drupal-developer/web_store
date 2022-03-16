@@ -7,6 +7,7 @@ namespace Drupal\commerce_paycomet\Plugin\Commerce\PaymentGateway;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\CreditCard;
 use Drupal\commerce_payment\Entity\PaymentMethod;
+use Drupal\commerce_payment\Entity\PaymentMethodInterface;
 use Drupal\commerce_payment\Exception\PaymentGatewayException;
 use Drupal\commerce_payment\PaymentMethodTypeManager;
 use Drupal\commerce_payment\PaymentTypeManager;
@@ -232,10 +233,12 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
           $payment->save();
 
           if ($feedback['Response'] === 'OK') {
+            if ($order->getTotalPaid()) {
+              $price =  $order->getTotalPaid()->add($price);
+            }
             $order->setTotalPaid($price);
             $order->save();
           }
-
         }
       }
 
@@ -308,6 +311,15 @@ class PaycometRedirect extends OffsitePaymentGatewayBase {
    */
   protected function getLockName(OrderInterface $order): string {
     return 'commerce_paycoment_process_request_' . $order->uuid();
+  }
+
+  /**
+   * Deleted payment method.
+   *
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
+  public function deletePaymentMethod(PaymentMethodInterface $payment_method): void {
+    $payment_method->delete();
   }
 
 
