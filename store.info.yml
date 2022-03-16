@@ -4,6 +4,7 @@ description: 'Funcionalidad para web tienda'
 package: 'Tienda'
 core_version_requirement: ^9
 version: '1.1.0'
+datestamp: 1647432986
 dependencies:
   - commerce:commerce
   - commerce_simple_stock:commerce_simple_stock
